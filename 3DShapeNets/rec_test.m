@@ -14,7 +14,7 @@ global kConv_forward2 kConv_forward_c;
 num_layer = length(model.layers);
 
 test_list = read_data_list(model.data_path, model.classnames, ...
-    model.volume_size + 2 * model.pad_size, 'test', debug);
+    model.volume_size + 2 * model.pad_size, 'train', debug);
 
 label = [];
 new_list = repmat(struct('filename', '', 'label', 0), 1, 1);

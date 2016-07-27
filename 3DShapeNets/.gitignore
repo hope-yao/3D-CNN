@@ -1,7 +1,5 @@
 # parameter tuning files
 run_pretrain30.m
-run_pretrain.m
-run_finetuning.m
 resume30_l1.m
 resume30_l2.m
 resume30_l3.m
@@ -19,7 +17,8 @@ resume48_l6.m
 *.mex*
 
 # Saved models
-*.mat
+#*.mat
+volumetric_data/*
 
 # log files
 *.log*

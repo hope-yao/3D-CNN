@@ -1,0 +1,42 @@
+function filter_visual()
+load('./pretrained_model.mat');
+w = rec_conv(model,2); % reconstruct filter at which layer
+save('w_projected.mat','w');
+plot_filter(w)
+show_sample(w,0.5)
+end
+
+function plot_filter(w)
+
+figure;
+assert(size(w,1)>=6);
+for i=1:6
+    subplot(2,3,i)
+    vol3d('cdata', squeeze(w(i,:,:,:)), 'xdata', [0 1], 'ydata', [0 1], 'zdata', [0 1]);
+    colormap(bone(256));
+    alphamap([0 linspace(0.1, 0, 2)]);
+    %     axis([0.1,0.9,0.1,0.9,0.1,0.9])
+    set(gcf, 'color', 'w');
+    view(3);
+end
+
+end
+
+
+function w = rec_conv(model,layer_idx)
+kernels
+
+mat2 = (model.layers{layer_idx+1}.w); % upper layer
+mat1 = (model.layers{layer_idx}.w); % lower layer
+stride = (model.layers{layer_idx}.stride);
+
+while layer_idx~=1
+    if(layer_idx==2)
+        w = myConvolve(kConv_backward, model.layers{2}.w, w, model.layers{2}.stride, 'backward');
+    else
+        w= myConvolve(kConv_backward_c, mat, w, model.layers{2}.stride, 'backward');
+    end
+    layer_idx = layer_idx - 1;
+end
+end
+

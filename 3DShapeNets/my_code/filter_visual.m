@@ -1,23 +1,23 @@
 function filter_visual()
-load('./pretrained_model.mat');
-layer_idx = 2; % n-th hidden layer
-w = rec_conv(model,layer_idx,[]);
+load('./pretrained_model_nosal_48_6_2_160_5_2_32_4_1_1200_4000_d10.mat');
+w = rec_conv(model,3); % filter of which rbm
 save('w_projected.mat','w');
-plot_filter(w)
-show_sample(w,0.5)
+% plot_filter(w)
+for i=1:10:32
+    figure;show_sample(squeeze(w(1,:,:,:)),0.0002)
+end
 end
 
 function plot_filter(w)
 
 figure;
-assert(size(w,1)>=6);
-for i=1:6
-    subplot(2,3,i)
+assert(size(w,1)>=4);
+for i=1:4
+    subplot(2,2,i)
     vol3d('cdata', squeeze(w(i,:,:,:)), 'xdata', [0 1], 'ydata', [0 1], 'zdata', [0 1]);
     colormap(bone(256));
     alphamap([0 linspace(0.1, 0, 2)]);
-    %         axis equal off
-%     axis([0.1,0.9,0.1,0.9,0.1,0.9])
+    %     axis([0.1,0.9,0.1,0.9,0.1,0.9])
     set(gcf, 'color', 'w');
     view(3);
 end
@@ -25,45 +25,19 @@ end
 end
 
 
-function w = rec_conv(model,layer_idx,mat2)
+function mat2 = rec_conv(model,layer_idx)
+kernels
 
-if isempty(mat2)
-    mat2 = squeeze(model.layers{layer_idx+1}.w); % upper layer
-end
-mat1 = squeeze(model.layers{layer_idx}.w); % lower layer
-l1 = size(mat1,2);
-l2 = size(mat2,2);
-w = zeros(size(mat2,1),l1+l2-1,l1+l2-1,l1+l2-1,size(mat1,5));
-for i=1:size(mat2,1) % number of final figures
-    for j=1:size(mat2,5) % number of channels
-        for k=1:size(mat1,5)
-            w1 = squeeze(mat1(j,:,:,:,k));
-            w2 = squeeze(mat2(i,:,:,:,j));
-            w(i,:,:,:,k) = squeeze(w(i,:,:,:,k)) + convn(w2,w1);
-        end
+mat2 = (model.layers{layer_idx+1}.w); % upper layer
+while layer_idx~=1
+    mat1 = (model.layers{layer_idx}.w); % lower layer
+    stride = model.layers{layer_idx}.stride;
+    if(layer_idx==2)
+        mat2 = myConvolve(kConv_backward, mat2, mat1, stride, 'backward');
+    else
+        mat2 = myConvolve(kConv_backward_c, mat2, mat1, stride, 'backward');
     end
+    layer_idx = layer_idx - 1;
 end
-layer_idx = layer_idx - 1;
-if(layer_idx>2)
-    w = rec_conv(model,layer_idx,w);
-else
-    w = rec_conv2(model.layers{2}.w,w);
-    return;
-end
-
-end
-
-function w = rec_conv2(mat1,mat2)
-l1 = size(mat1,2);
-l2 = size(mat2,2);
-w = zeros(size(mat2,1),l1+l2-1,l1+l2-1,l1+l2-1);
-for i=1:size(mat2,1) % number of channels
-    for j=1:size(mat2,5)
-        w1 = squeeze(mat1(j,:,:,:));
-        w2 = squeeze(mat2(i,:,:,:,j));
-        w(i,:,:,:) = squeeze(w(i,:,:,:)) + convn(w2,w1);
-    end
-end
-
 end
 

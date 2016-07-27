@@ -3,14 +3,16 @@ function reconstruction()
 
 % reset(gpuDevice(1));
 run('setup_paths.m')
-% model = load('pretrained_model.mat');
-model = load('model30_l2.mat');
+model = load('pretrained_model_nosal_48_6_2_160_5_2_32_4_1_1200_4000_d10.mat');
+% model = load('model30_l2.mat');
 
 % filename1 = './volumetric_data/my_pot/30/train/pot_train_new.mat';
-filename2 = './volumetric_data/my_cup/30/train/cup_train.mat';
+% filename2 = './my_code/more/cup_train_saliency.mat';
+filename2 = './my_code/more/cup_train.mat';
 
-for goto_l = 2:1:2; %i-th hidden layer
+for goto_l = 2:1:4; %i-th hidden layer
 %     reconstruct_one(model.model,filename1,goto_l)
+    figure;
     reconstruct_one(model.model,filename2,goto_l)
 end
 end
@@ -55,13 +57,15 @@ visible_presigmoid = myConvolve(kConv_backward, chain, model.layers{l}.w, stride
 visible_presigmoid = bsxfun(@plus, visible_presigmoid, permute(model.layers{l}.b, [5,1,2,3,4]));
 visible_prob = sigmoid(visible_presigmoid);
 % for t=0.1:0.1:0.8
-for t=0.5
-    show_sample(visible_prob,t)
-    view(2)
-    
+cnt = 1;
+for t=0.7:-0.1:0.2
+    subplot(2,3,cnt);
+    show_sample(squeeze(visible_prob(1,:,:,:)),t)
+    title(strcat('threshold ',num2str(t)))
     [~,name,~] = fileparts(filename);
     savefig(strcat(strcat(name,'_l',num2str(goto_l)),'_',num2str(t),'.fig'));
     %     close
+    cnt = cnt + 1;
 end
 end
 

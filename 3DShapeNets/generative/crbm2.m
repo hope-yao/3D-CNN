@@ -1,4 +1,4 @@
-function [model] = crbm2(model, data_list, param)
+function [model,ep_er] = crbm2(model, data_list, param)
 % Convolutional RBM training of the second layer.
 % The CRBM of second layer uses different convolution CUDA kernels with the
 % third and fourth layer.
@@ -34,13 +34,14 @@ new_list = balance_data(data_list, batch_size);
 n = length(new_list);
 batch_num = n / batch_size;
 assert(batch_num == floor(batch_num));
+ep_er=[];
 for iter = 1 : param.epochs
     shuffle_index = randperm(n);
     for b = 1 : batch_num
         batch_index = shuffle_index((b-1)*batch_size + 1 : b * batch_size);
         batch = read_batch(model, new_list(batch_index), false);
         
-        hidden_presigmoid = myConvolve2(kConv_forward2, batch, all_ones, stride, 'forward');
+        hidden_presigmoid = myConvolve2(kConv_forward2, batch, all_ones, stride, 'forward',0);
         the_filter = (hidden_presigmoid == 0);
         %% positive phase : use data-dependent expectation
         % first propagate upwards
@@ -120,6 +121,7 @@ for iter = 1 : param.epochs
         %val_err = get_cross_entropy(model, val, l);
         fprintf('Iter: %d cross-entropy: train: %f\n', iter,...
             mean(train_err));
+        ep_er=[ep_er,train_err];
         
         % monitor the weight
         W = model.layers{l}.w; B = model.layers{l}.b; C = model.layers{l}.c;
