@@ -3,6 +3,8 @@ function model = run_pretrain()
 % reset(gpuDevice(1));
 rng('shuffle');
 kernels;
+global my_thread
+my_thread=1;
 
 param = [];
 param.debug = 0;
@@ -12,7 +14,7 @@ data_size = param.volume_size + 2 * param.pad_size;
 
 % data path
 param.data_path = './volumetric_data';
-param.classnames = {'my_pot','my_cup'};
+param.classnames = {'my_pot_sal'};
 % param.classnames = {'bathtub', 'bed', 'chair', 'desk', 'dresser', 'monitor', 'night_stand', 'sofa', 'table', 'toilet'};
 % param.classnames = {'bathtub', 'bed', 'chair', 'desk', 'dresser', 'monitor', 'night_stand', 'sofa', 'table', 'toilet', ...
 %            'airplane', 'bench', 'bookshelf', 'bottle', 'bowl', 'car', 'cone', 'cup', 'curtain', 'door', ...
@@ -30,8 +32,8 @@ param.network = {
 %     struct('type', 'fullconnected', 'size', 400, 'actFun', 'sigmoid');
 
     struct('type', 'convolution', 'outputMaps', 16, 'kernelSize', 6, 'actFun', 'sigmoid', 'stride', 2);
-    struct('type', 'convolution', 'outputMaps', 160, 'kernelSize', 5, 'actFun', 'sigmoid', 'stride', 2);
-    struct('type', 'convolution', 'outputMaps', 32, 'kernelSize', 4, 'actFun', 'sigmoid', 'stride', 1);
+    struct('type', 'convolution', 'outputMaps', 16, 'kernelSize', 5, 'actFun', 'sigmoid', 'stride', 2);
+    struct('type', 'convolution', 'outputMaps', 16 , 'kernelSize', 4, 'actFun', 'sigmoid', 'stride', 1);
     struct('type', 'fullconnected', 'size', 1200, 'actFun', 'sigmoid');
     struct('type', 'fullconnected', 'size', 4000, 'actFun', 'sigmoid');
 };
@@ -47,7 +49,7 @@ model = initialize_cdbn(param);
 fprintf('\nmodel initialzation completed!\n\n');
 param = [];
 param.layer = 2;
-param.epochs = 500;
+param.epochs = 150*2;
 param.lr = 0.01;
 param.weight_decay = 1e-5;
 param.momentum = [0.5, 0.9];
@@ -59,12 +61,12 @@ param.sparse_target = 0.01;
 param.sparse_cost = 0.001;
 [model,er] = crbm2(model, data_list, param);
 save('model30_l2','model');
-plot(er(1:length(er)),'.-');hold on;
-return;
+% plot(er(1:length(er)),'.-');hold on;
+% return;
 
 param = [];
 param.layer = 3;
-param.epochs = 10;
+param.epochs = 100*2*2;
 param.lr = 0.01;
 param.weight_decay = 1e-5;
 param.momentum = [0.5, 0.9];
@@ -81,7 +83,7 @@ save('model30_l3','model');
 
 param = [];
 param.layer = 4;
-param.epochs = 50;
+param.epochs = 500*2;
 param.lr = 0.01;
 param.weight_decay = 1e-5;
 param.momentum = [0.5, 0.9];

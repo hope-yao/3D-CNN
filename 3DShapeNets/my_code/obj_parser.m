@@ -1,4 +1,5 @@
 function instance=obj_parser(obj_file)
+% from obj to voxel
 
 fid_obj = fopen(obj_file,'r');
 
@@ -35,8 +36,8 @@ vertices = vertices - repmat(mean(vertices,1),size(vertices,1),1);
 FV.faces = faces;
 FV.vertices = vertices;
 
-% ll = 200; d = 200;
-ll = 30; d = 26;
+ll = 100; d = 90;
+% ll = 30; d = 26;
 % instance=polygon2voxel(FV,[30 30 30],'auto');
 instance=polygon2voxel(FV,[d d d],'auto');
 pad_size = (ll - d)/2;
@@ -48,6 +49,6 @@ matfilename = fullfile(pathstr,[name '.mat']);
 save(matfilename,'instance');
 
 data = reshape(instance,[1,ll,ll,ll]);
-show_sample(data,0.1)
+show_sample(squeeze(data),0.1)
 % figure;plot3D(instance,'timed',0.1)
 

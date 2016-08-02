@@ -49,32 +49,40 @@ __global__ void kConvolve_forward(float* targets, float* images, float* filters,
                                    const int imgSizeZ, const int imgSizeY, const int imgSizeX, const int filterSize, const int paddingStart,
                                    const int moduleStride,
                                    const int numModulesZ, const int numModulesY, const int numModulesX, const int imgStride) {
-    __shared__ float shFilters[4*1][4 * 4]; // pre-load 4 pixels from 4*4 filters
-    __shared__ float shImages[4*1][32 * 1]; // pre-load 4 pixels from 32*2 images
+    __shared__ float shFilters[4*1][4 * 4]; // pre-load 4 pixels from 4*4 filters (4*4 is blockdim.x used to process filters)
+    __shared__ float shImages[4*1][32 * 1]; // pre-load 4 pixels from 32*1 images (32*1 is blockdim.y used to process images)
+   
+    const int myImgIdx = blockIdx.y * 32 * 1 + threadIdx.y; 
+    images += myImgIdx;
+
+    const int blocksPerModule = numFilters / (4*4); // how many blocks a set of filters will extend
+    const int blockFilterIdx = blockIdx.x % blocksPerModule; // which 4*4 filter set it is using 
+    const int moduleIdx = blockIdx.x / blocksPerModule; // to which activation it is
+
+    const int tidx = threadIdx.x * 32 + threadIdx.y; //colum-wise overall thread idx in one block
+    const int shFilterLoadY = tidx / (4 * 4); // 
+    const int shFilterLoadX = tidx % (4 * 4); //
+    // size(filters) = FilterPerBatch * FilterX * FilterY * FilterZ
+    filters += 4 * 4 * blockFilterIdx + shFilterLoadY * numFilters + shFilterLoadX;
+
+    // size(targets) = ImagePerBatch * (ActivationX * ActivationY * ActivationZ) * FilterPerBatch 
+    targets += myImgIdx + moduleIdx * numImages
+            + numImages * (numModulesX * numModulesY * numModulesZ) * (blockFilterIdx * 4 * 4 + threadIdx.x);
+    // by default every thread handle 4 filters,  
+    // this is the starting address for the result of convolution of following four filters 
+    // moduleIdx might be the address for covolution result ???
+
+//    const int imgLoadModPosX = (  int( blockIdx.x / int(numFilters/(4*4))  ) % numModulesX) * moduleStride;
+
+    const int imgLoadModPosX = (moduleIdx % numModulesX) * moduleStride;
+    const int imgLoadModPosY = ((moduleIdx / numModulesX) % numModulesY )* moduleStride;
+    const int imgLoadModPosZ = (moduleIdx / (numModulesX * numModulesY)) * moduleStride; //increment in loading 3D shape
+
     const int imgPixels = imgSizeZ * imgSizeY * imgSizeX;
     const int filterPixels = filterSize * filterSize * filterSize;
 
-    const int blocksPerModule = numFilters / (4*4);
-    const int moduleIdx = blockIdx.x / blocksPerModule;
-    const int blockFilterIdx = blockIdx.x % blocksPerModule;
-
-    const int tidx = threadIdx.x * 32 + threadIdx.y;
-
-    const int imgLoadModPosZ = (moduleIdx / (numModulesX * numModulesY)) * moduleStride;
-    const int imgLoadModPosY = ((moduleIdx / numModulesX) % numModulesY )* moduleStride;
-    const int imgLoadModPosX = (moduleIdx % numModulesX) * moduleStride;
-
-    const int shFilterLoadY = tidx / (4 * 4);
-    const int shFilterLoadX = tidx % (4 * 4);
-    const int myImgIdx = blockIdx.y * 32 * 1 + threadIdx.y;
-    images += myImgIdx;
-    filters += 4 * 4 * blockFilterIdx
-             + shFilterLoadY * numFilters + shFilterLoadX;
-    targets += moduleIdx * numImages
-            + (blockFilterIdx * 4 * 4 + threadIdx.x) * numImages * numModulesZ * numModulesY * numModulesX
-            + myImgIdx;
-
-
+	
+    // initial matrix to store matrix product result
     float prod[4][1];
     #pragma unroll
     for(int f = 0; f < 4; f++) {
@@ -84,13 +92,13 @@ __global__ void kConvolve_forward(float* targets, float* images, float* filters,
         }
     }
 
-    for (int p = 0; p < filterPixels; p += 4) {
+    for (int p = 0; p < filterPixels; p += 4) {//why add 4??? 
         /*
          * Load 4 pixels from 4*4 filters
          */
-        if (shFilterLoadY < 4) {
+        if (shFilterLoadY < 4) { // need to handle error here???  
             #pragma unroll
-            for (int p2 = 0; p2 < 4; p2 += 32/4) {
+            for (int p2 = 0; p2 < 4; p2 += 32/4) {//why add 32/4???
                 if (p + p2 + shFilterLoadY < filterPixels) {
                     #pragma unroll
                     for (int c = 0; c < 1; c++) {
@@ -119,7 +127,7 @@ __global__ void kConvolve_forward(float* targets, float* images, float* filters,
                     if (!true || myImgIdx + i * 32 < numImages) {
                         #pragma unroll
                         for (int c = 0; c < 1; c++) {
-                            shImages[threadIdx.x + c * 4][threadIdx.y + i * 32] = images[imgStride * (c * imgPixels + z * imgSizeX * imgSizeY + y * imgSizeX + x) + i * 32];
+                            shImages[threadIdx.x + c * 4][threadIdx.y + i * 32] = images[imgStride * (c * imgPixels + z * imgSizeX * imgSizeY + y * imgSizeX + x) + i * 32];                            				shImages[threadIdx.x][threadIdx.y] = images[imgStride * (z * imgSizeX * imgSizeY + y * imgSizeX + x)];
                         }
                     } else {
                         #pragma unroll
@@ -158,6 +166,7 @@ __global__ void kConvolve_forward(float* targets, float* images, float* filters,
         if (!true || myImgIdx + g * 32 < numImages) {
             #pragma unroll
             for (int f = 0; f < 4; f++) {
+		// size(targets) = ImagePerBatch * (ActivationX * ActivationY * ActivationZ) * FilterPerBatch 
                 targets[g * 32 + f * 4 * numImages * numModulesZ * numModulesY * numModulesX] = prod[f][g];
             }
         }

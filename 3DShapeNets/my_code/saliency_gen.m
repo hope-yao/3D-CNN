@@ -1,8 +1,8 @@
 clear
 figure;
 a=1;b=0;
-load('./my_code/more/pot_train_new.mat');
 
+load('./my_code/more/pot_train_new.mat');
 saliency = zeros(size(instance));
 for x=1:30
     for y=1:30
@@ -78,6 +78,26 @@ for x=1:30
 end
 instance=saliency;save('cup_test_saliency.mat','instance')
 instance=reshape(saliency,[1,30,30,30]);
+subplot(2,2,3);show_sample(instance,0.5);title('cup test');
+
+
+% high resolution pot
+load('./my_code/more/pot_train_hr.mat');
+saliency = zeros(size(instance));
+for x=1:100
+    for y=1:100
+        for z=1:100
+            if instance(x,y,z)~=0
+                if y>68&&x>71 || y>73&&x>25 || y<17&&x>34
+                    saliency(x,y,z)=a;
+                else
+                    saliency(x,y,z)=b;
+                end
+            end
+        end
+    end
+end
+instance=saliency;save('pot_train_sal_hr.mat','instance')
 subplot(2,2,3);show_sample(instance,0.5);title('cup test');
 
 

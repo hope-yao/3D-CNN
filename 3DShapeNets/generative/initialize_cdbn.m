@@ -21,12 +21,6 @@ model.data_path = param.data_path;
 
 model.layers{1}.type = 'input';
 model.layers{1}.layerSize = param.data_size;
-
-debug_mod = 0;
-if debug_mod
-    load('pretrained_model1.mat');
-end
-
 for l = 2 : numLayer
     if strcmp(network{l}.type , 'convolution')
         model.layers{l}.type = 'convolution';
@@ -39,13 +33,11 @@ for l = 2 : numLayer
         
         model.layers{l}.layerSize = [thisMapSize network{l}.outputMaps];
         model.layers{l}.kernelSize = [network{l}.kernelSize, network{l}.kernelSize, network{l}.kernelSize];
-        
-        if ~debug_mod
-            model.layers{l}.w = rand([network{l}.outputMaps, network{l}.kernelSize, network{l}.kernelSize, network{l}.kernelSize, model.layers{l-1}.layerSize(4)], 'single');
-            model.layers{l}.w = (model.layers{l}.w - 0.5) * 2 * sqrt( 6 / (network{l}.kernelSize.^3 * (network{l}.outputMaps + model.layers{l-1}.layerSize(4))));
-            model.layers{l}.c  = zeros([network{l}.outputMaps, 1],'single'); 
-            model.layers{l}.b = zeros([model.layers{l-1}.layerSize, 1],'single');
-        end
+
+        model.layers{l}.w = rand([network{l}.outputMaps, network{l}.kernelSize, network{l}.kernelSize, network{l}.kernelSize, model.layers{l-1}.layerSize(4)], 'single');
+        model.layers{l}.w = (model.layers{l}.w - 0.5) * 2 * sqrt( 6 / (network{l}.kernelSize.^3 * (network{l}.outputMaps + model.layers{l-1}.layerSize(4))));
+        model.layers{l}.c  = zeros([network{l}.outputMaps, 1],'single'); 
+        model.layers{l}.b = zeros([model.layers{l-1}.layerSize, 1],'single');
 		
         model.layers{l}.grdw = zeros(size(model.layers{l}.w),'single');
         model.layers{l}.grdc = zeros(size(model.layers{l}.c),'single');
@@ -56,27 +48,23 @@ for l = 2 : numLayer
         model.layers{l}.actFun = network{l}.actFun;
         model.layers{l}.layerSize = [network{l}.size 1];
 		
-        if ~debug_mod
-            model.layers{l}.w = rand([prod(model.layers{l-1}.layerSize), prod(model.layers{l}.layerSize)], 'single');
-            model.layers{l}.w = (model.layers{l}.w - 0.5) * 2 * sqrt( 6 / (prod(model.layers{l}.layerSize) + prod(model.layers{l-1}.layerSize)));
-            model.layers{l}.c = zeros([1, model.layers{l}.layerSize], 'single');
-            model.layers{l}.b = zeros([1, prod(model.layers{l-1}.layerSize)],'single');
-        end
+        model.layers{l}.w = rand([prod(model.layers{l-1}.layerSize), prod(model.layers{l}.layerSize)], 'single');
+        model.layers{l}.w = (model.layers{l}.w - 0.5) * 2 * sqrt( 6 / (prod(model.layers{l}.layerSize) + prod(model.layers{l-1}.layerSize)));
+        model.layers{l}.c = zeros([1, model.layers{l}.layerSize], 'single');
+        model.layers{l}.b = zeros([1, prod(model.layers{l-1}.layerSize)],'single');
         
         model.layers{l}.grdw = zeros(size(model.layers{l}.w), 'single');
         model.layers{l}.grdc = zeros(size(model.layers{l}.c), 'single');
         model.layers{l}.grdb = zeros(size(model.layers{l}.b), 'single');
     else
-        model.layers{l}.type = 'fullconnected';
+        model.layers{l}.type = 'fullconnected'; %last layer, number of class added
         model.layers{l}.actFun = network{l}.actFun;
         model.layers{l}.layerSize = [network{l}.size 1];
 		
-        if ~debug_mod
-            model.layers{l}.w = rand(prod(model.layers{l-1}.layerSize) + param.classes, prod(model.layers{l}.layerSize), 'single');
-            model.layers{l}.w = (model.layers{l}.w - 0.5) * 2 * sqrt( 6 / (prod(model.layers{l}.layerSize) + prod(model.layers{l-1}.layerSize)));
-            model.layers{l}.c = zeros([1, model.layers{l}.layerSize], 'single');
-            model.layers{l}.b = zeros([1, prod(model.layers{l-1}.layerSize) + param.classes],'single');
-        end
+        model.layers{l}.w = rand(prod(model.layers{l-1}.layerSize) + param.classes, prod(model.layers{l}.layerSize), 'single');
+        model.layers{l}.w = (model.layers{l}.w - 0.5) * 2 * sqrt( 6 / (prod(model.layers{l}.layerSize) + prod(model.layers{l-1}.layerSize)));
+        model.layers{l}.c = zeros([1, model.layers{l}.layerSize], 'single');
+        model.layers{l}.b = zeros([1, prod(model.layers{l-1}.layerSize) + param.classes],'single');
         
         model.layers{l}.grdw = zeros(size(model.layers{l}.w),'single');
         model.layers{l}.grdc = zeros(size(model.layers{l}.c),'single');

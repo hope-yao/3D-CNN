@@ -41,7 +41,7 @@ for iter = 1 : param.epochs
         batch_index = shuffle_index((b-1)*batch_size + 1 : b * batch_size);
         batch = read_batch(model, new_list(batch_index), false);
         
-        hidden_presigmoid = myConvolve2(kConv_forward2, batch, all_ones, stride, 'forward',0);
+        hidden_presigmoid = myConvolve2(kConv_forward2, batch, all_ones, stride, 'forward');
         the_filter = (hidden_presigmoid == 0);
         %% positive phase : use data-dependent expectation
         % first propagate upwards

@@ -1,4 +1,4 @@
-function target = myConvolve2(kConv, data, kernel, stride, task,my_thread)
+function target = myConvolve2(kConv, data, kernel, stride, task)
 % Matlab interfaces of alex fast convolution kernels.
 % There are are total 3 kinds of operations : given the two of (images,
 % filters, hidacts) to compute the remaining one. And for each operation,
@@ -11,7 +11,9 @@ function target = myConvolve2(kConv, data, kernel, stride, task,my_thread)
 
 % interfaces for cuda code kFunctions2.cu. kFunction2.cu swaps x,y
 % coordinates in kFunctions.cu
-% my_thread = 0;
+
+global my_thread;
+
 if strcmp(task,'forward')
     numColors = size(data,5);
     if numColors == 1
@@ -108,7 +110,7 @@ elseif strcmp(task,'weight')
         if ~my_thread
             kConv.GridSize = [numFilters*numModulesX*numModulesY*numModulesZ/partialSum/16/filtersPerThread, ceil(filterSize^3 / 8) * (numColors / colorsPerThread)];
         else
-            kConv.GridSize = [ceil(numFilters*numModulesX*numModulesY*numModulesZ/partialSum/16/filtersPerThread), ceil(filterSize^3 / 8) * (numColors / colorsPerThread)];
+            kConv.GridSize = [ceil(numFilters*numModulesX*numModulesY*numModulesZ/partialSum/16/filtersPerThread), ceil(filterSize^3 / 8) * ceil(numColors / colorsPerThread)];
         end
         
         target = zeros(numFilters, filterSize, filterSize, filterSize, numColors, 'single');
@@ -155,7 +157,7 @@ elseif strcmp(task,'backward')
         if ~my_thread
             kConv.GridSize = [ceil(numImages/(imgsPerThread * 32)) * (numColors / (4 * colorsPerThread)), imgSizeZ * imgSizeY * imgSizeX];
         else
-            kConv.GridSize = [ceil(numImages/(imgsPerThread * 32) * (numColors / (4 * colorsPerThread))), imgSizeZ * imgSizeY * imgSizeX];
+            kConv.GridSize = [ceil(numImages/(imgsPerThread * 32)) * ceil(numColors / (4 * colorsPerThread)), imgSizeZ * imgSizeY * imgSizeX];
         end
         
         target = zeros(numImages, imgSizeX, imgSizeY, imgSizeZ, numColors, 'single');

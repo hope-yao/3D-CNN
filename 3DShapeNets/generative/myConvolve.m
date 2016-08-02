@@ -1,4 +1,4 @@
-function target = myConvolve(kConv, data, kernel, stride, task,my_thread)
+function target = myConvolve(kConv, data, kernel, stride, task)
 % Matlab interfaces of alex fast convolution kernels.
 % There are are total 3 kinds of operations : given the two of (images,
 % filters, hidacts) to compute the remaining one. And for each operation,
@@ -11,7 +11,7 @@ function target = myConvolve(kConv, data, kernel, stride, task,my_thread)
 
 % interfaces for cuda code kFunctions.cu.
 
-% my_thread = 0;
+global my_thread;
 
 if strcmp(task,'forward')
     numColors = size(data,5);
@@ -156,7 +156,7 @@ elseif strcmp(task,'backward')
         if ~my_thread
             kConv.GridSize = [ceil(numImages/(imgsPerThread * 32)) * (numColors / (4 * colorsPerThread)), imgSizeZ * imgSizeY * imgSizeX];
         else
-            kConv.GridSize = [ceil(numImages/(imgsPerThread * 32) * (numColors / (4 * colorsPerThread))), imgSizeZ * imgSizeY * imgSizeX];
+            kConv.GridSize = [ceil(numImages/(imgsPerThread * 32)) * ceil((numColors / (4 * colorsPerThread))), imgSizeZ * imgSizeY * imgSizeX];
         end
         
         target = zeros(numImages, imgSizeX, imgSizeY, imgSizeZ, numColors, 'single');
