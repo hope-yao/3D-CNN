@@ -3,13 +3,19 @@ function model = run_pretrain()
 % reset(gpuDevice(1));
 rng('shuffle');
 kernels;
-global my_thread
+global my_thread high_res
 my_thread=1;
+high_res = 100;
 
 param = [];
 param.debug = 0;
-param.volume_size = 24;
-param.pad_size = 3;
+if ~high_res
+    param.volume_size = 24;
+    param.pad_size = 3;
+elseif high_res==100
+    param.volume_size = 90;
+    param.pad_size = 5;
+end
 data_size = param.volume_size + 2 * param.pad_size;
 
 % data path
@@ -25,18 +31,24 @@ data_list = read_data_list(param.data_path, param.classnames, data_size, 'train'
 
 param.network = {
     struct('type', 'input');
-%     struct('type', 'convolution', 'outputMaps', 32, 'kernelSize', 6, 'actFun', 'sigmoid', 'stride', 2);
-%     struct('type', 'convolution', 'outputMaps', 32, 'kernelSize', 5, 'actFun', 'sigmoid', 'stride', 2);
-%     struct('type', 'convolution', 'outputMaps', 512, 'kernelSize', 4, 'actFun', 'sigmoid', 'stride', 1);
-%     struct('type', 'fullconnected', 'size', 120, 'actFun', 'sigmoid');
-%     struct('type', 'fullconnected', 'size', 400, 'actFun', 'sigmoid');
-
-    struct('type', 'convolution', 'outputMaps', 16, 'kernelSize', 6, 'actFun', 'sigmoid', 'stride', 2);
-    struct('type', 'convolution', 'outputMaps', 16, 'kernelSize', 5, 'actFun', 'sigmoid', 'stride', 2);
-    struct('type', 'convolution', 'outputMaps', 16 , 'kernelSize', 4, 'actFun', 'sigmoid', 'stride', 1);
+    %     struct('type', 'convolution', 'outputMaps', 32, 'kernelSize', 6, 'actFun', 'sigmoid', 'stride', 2);
+    %     struct('type', 'convolution', 'outputMaps', 32, 'kernelSize', 5, 'actFun', 'sigmoid', 'stride', 2);
+    %     struct('type', 'convolution', 'outputMaps', 512, 'kernelSize', 4, 'actFun', 'sigmoid', 'stride', 1);
+    %     struct('type', 'fullconnected', 'size', 120, 'actFun', 'sigmoid');
+    %     struct('type', 'fullconnected', 'size', 400, 'actFun', 'sigmoid');
+    
+    %     struct('type', 'convolution', 'outputMaps', 16, 'kernelSize', 6, 'actFun', 'sigmoid', 'stride', 2);
+    %     struct('type', 'convolution', 'outputMaps', 16, 'kernelSize', 5, 'actFun', 'sigmoid', 'stride', 2);
+    %     struct('type', 'convolution', 'outputMaps', 16 , 'kernelSize', 4, 'actFun', 'sigmoid', 'stride', 1);
+    %     struct('type', 'fullconnected', 'size', 1200, 'actFun', 'sigmoid');
+    %     struct('type', 'fullconnected', 'size', 4000, 'actFun', 'sigmoid');
+    
+    struct('type', 'convolution', 'outputMaps', 32, 'kernelSize', 24, 'actFun', 'sigmoid', 'stride', 2);
+    struct('type', 'convolution', 'outputMaps', 32, 'kernelSize', 15, 'actFun', 'sigmoid', 'stride', 2);
+    struct('type', 'convolution', 'outputMaps', 32 , 'kernelSize', 8, 'actFun', 'sigmoid', 'stride', 1);
     struct('type', 'fullconnected', 'size', 1200, 'actFun', 'sigmoid');
     struct('type', 'fullconnected', 'size', 4000, 'actFun', 'sigmoid');
-};
+    };
 
 % This is to duplicate the labels for the final RBM in order to enforce the
 % label training.

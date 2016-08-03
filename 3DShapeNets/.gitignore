@@ -1,17 +1,8 @@
 # parameter tuning files
-run_pretrain30.m
-resume30_l1.m
-resume30_l2.m
-resume30_l3.m
-resume30_l5.m
-resume30_l6.m
-resume30_l4.m
-resume48_l1.m
-resume48_l2.m
-resume48_l3.m
-resume48_l4.m
-resume48_l5.m
-resume48_l6.m
+model30_l4.mat
+model30_l3.mat
+model30_l2.mat
+w_project.mat
 
 # Compiled MATLAB
 *.mex*
